@@ -2,17 +2,17 @@
 #
 # Copyright (c) 2018 - 2021 Electrostatus
 # https://orthallelous.wordpress.com/2018/12/19/custom-color-dialog/
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,27 +22,26 @@
 # SOFTWARE.
 
 
-from math import degrees, radians, sqrt, atan2, sin, cos, pi
-import random
-
-# to use PyQt, change PySide2 to PyQt5,
-#   and comment out Signal/uncomment pyqtSignal as Signal below
-from PySide2.QtCore    import (QBuffer, QEvent, QIODevice, QRegExp, Qt,#QTimer,
-                               QPoint, QPointF, QRectF, QSize, QSizeF, QRect,
-                               Signal)  # PySide2
-                               #pyqtSignal as Signal)  # PyQt5
-
-from PySide2.QtGui     import (QBrush, QColor, QConicalGradient, QIcon,
-                               QImage, QPainter, QPainterPath, QPixmap,
-                               QRadialGradient, QRegExpValidator, QCursor,
-                               QScreen)
-
+from PySide2.QtCore import (QBuffer, QEvent, QIODevice, QRegExp, Qt,  # QTimer,
+                            QPoint, QPointF, QRectF, QSize, QSizeF, QRect,
+                            Signal)  # PySide2
 from PySide2.QtWidgets import (QAbstractSpinBox, QApplication, QColorDialog,
                                QComboBox, QDialog, QGraphicsPixmapItem,
                                QDialogButtonBox, QFrame, QGraphicsScene,
                                QGraphicsView, QGridLayout, QGraphicsItem,
                                QLabel, QLineEdit, QPushButton, QSizePolicy,
                                QSpinBox, QStyle, QWidget)
+from PySide2.QtGui import (QBrush, QColor, QConicalGradient, QIcon,
+                           QImage, QPainter, QPainterPath, QPixmap,
+                           QRadialGradient, QRegExpValidator, QCursor,
+                           QScreen)
+from math import degrees, radians, sqrt, atan2, sin, cos, pi
+import random
+import substance_painter.ui
+
+plugin_widgets = []
+"""Keep track of added ui elements for cleanup"""
+
 
 class colorPicker(QDialog):
     "custom colorDialog from Orthallelous"
@@ -51,18 +50,23 @@ class colorPicker(QDialog):
 
     def __init__(self, initial=None, parent=None):
         super(colorPicker, self).__init__(parent)
-        self.setup(); self.setColor(initial)
+        self.setup()
+        self.setColor(initial)
 
     def currentColor(self): return self._color
+
     def setColor(self, qcolor=None):
-        if qcolor is None: self._color = QColor('#ffffff')
-        else: self._color = QColor(qcolor)
+        if qcolor is None:
+            self._color = QColor('#ffffff')
+        else:
+            self._color = QColor(qcolor)
         self._colorEdited()
 
     @staticmethod
     def getColor(initial=None, parent=None, title=None):
         dialog = colorPicker(initial, parent)
-        if title: dialog.setWindowTitle(title)
+        if title:
+            dialog.setWindowTitle(title)
         result = dialog.exec_()
         color = dialog._color
         return color
@@ -71,13 +75,11 @@ class colorPicker(QDialog):
         "emits colorSelected signal with valid color on OK"
         self.currentColorChanged.emit(self._color)
         self.colorSelected.emit(self._color)
-        self.close()
 
     def closeInvalid(self):
         "emits colorSelected signal with invalid color on Cancel"
         self._color = QColor()
         self.colorSelected.emit(QColor())
-        self.close()
 
     def setOption(self, option, Bool=True):
         if option == QColorDialog.NoButtons:
@@ -94,7 +96,8 @@ class colorPicker(QDialog):
     def _colorEdited(self):
         "internal color editing"
         sender, color = self.sender(), self._color
-        for i in self.inputs: i.blockSignals(True)
+        for i in self.inputs:
+            i.blockSignals(True)
 
         # get values
         if sender in self.rgbInputs:       # RGB
@@ -109,15 +112,21 @@ class colorPicker(QDialog):
             color = self._color = self.colorWheel.getColor()
         elif sender is self.colorNamesCB:  # NAMED
             dat = self.colorNamesCB.itemData(self.colorNamesCB.currentIndex())
-            try: color = self._color = QColor(dat.toString())  # PyQt
-            except: color = self._color = QColor(str(dat))     # PySide
+            try:
+                color = self._color = QColor(dat.toString())  # PyQt
+            except:
+                color = self._color = QColor(str(dat))     # PySide
             self.colorNamesCB.setToolTip(self.colorNamesCB.currentText())
-        else: pass
+        else:
+            pass
 
         # set values
-        for i, j in zip(color.getRgb()[:-1], self.rgbInputs): j.setValue(i)
-        for i, j in zip(color.getHsv()[:-1], self.hsvInputs): j.setValue(i)
-        for i, j in zip(color.getCmyk()[:-1], self.cmykInputs): j.setValue(i)
+        for i, j in zip(color.getRgb()[:-1], self.rgbInputs):
+            j.setValue(i)
+        for i, j in zip(color.getHsv()[:-1], self.hsvInputs):
+            j.setValue(i)
+        for i, j in zip(color.getCmyk()[:-1], self.cmykInputs):
+            j.setValue(i)
         self.htmlInput.setText(color.name()[1:])
         self.colorWheel.setColor(color)
         idx = self.colorNamesCB.findData(color.name())
@@ -126,15 +135,15 @@ class colorPicker(QDialog):
         pal = self.colorDisplay.palette()
         pal.setColor(self.colorDisplay.backgroundRole(), color)
         self.colorDisplay.setPalette(pal)
-        #self.colorDisplay.setStyleSheet('background:' + color.name())
 
-        for i in self.inputs: i.blockSignals(False)
+        for i in self.inputs:
+            i.blockSignals(False)
         self.currentColorChanged.emit(color)
 
     def pickColor(self):
         "pick a color on the screen, part 1"
         # screenshot desktop
-        self._img =  QApplication.primaryScreen().grabWindow(0)
+        self._img = QApplication.primaryScreen().grabWindow(0)
 
         self._view = QGraphicsView(self)
         scene = QGraphicsScene(self)  # display screenshot at full size
@@ -143,12 +152,14 @@ class colorPicker(QDialog):
         self._view.setWindowFlags(Qt.WindowType_Mask)
         self._view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self._view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scene.addPixmap(self._img)#; self._view.setScene(scene)
+        scene.addPixmap(self._img)  # ; self._view.setScene(scene)
 
-        self._mag = magnifier(); self._mag.setBackground(self._img)
+        self._mag = magnifier()
+        self._mag.setBackground(self._img)
         self._mag.setSize(11, 11)
-        scene.addItem(self._mag); self._view.setScene(scene)
-        
+        scene.addItem(self._mag)
+        self._view.setScene(scene)
+
         self._appview = QApplication
         self._appview.setOverrideCursor(Qt.CrossCursor)
 
@@ -159,36 +170,26 @@ class colorPicker(QDialog):
         "pick a color on the screen, part 2"
         color = QColor(self._img.toImage().pixel(event.globalPos()))
 
-        self._view.hide(); self._appview.restoreOverrideCursor()
-        self._color = color; self._colorEdited()
+        self._view.hide()
+        self._appview.restoreOverrideCursor()
+        self._color = color
+        self._colorEdited()
         self._mag = self._appview = self._view = self._img = None
 
     def showColors(self):
         "show location of colors on color wheel"
-        if self.showButton.isChecked(): self.colorWheel.showNamedColors(True)
-        else: self.colorWheel.showNamedColors(False)
-
-    def useRandom(self, state=True):
-        "toggles show colors button and random color button"
-        if state:
-            self.showButton.blockSignals(True)
-            self.showButton.setChecked(False)
-            self.showButton.hide()
-            self.showColors()
-            self.rndButton.blockSignals(False)
-            self.rndButton.show()
+        if self.showButton.isChecked():
+            self.colorWheel.showNamedColors(True)
         else:
-            self.showButton.blockSignals(False)
-            self.showButton.show()
-            self.rndButton.blockSignals(True)
-            self.rndButton.hide()
+            self.colorWheel.showNamedColors(False)
 
     def randomColor(self):
         "select a random color"
-        rand = random.randint; col = QColor()
+        rand = random.randint
+        col = QColor()
         col.setHsv(rand(0, 359), rand(0, 255), rand(0, 255))
-        #col.setRgb(rand(0, 255), rand(0, 255), rand(0, 255))
-        self.setColor(col); return col
+        self.setColor(col)
+        return col
 
     def getNamedColors(self):
         "returns a list [(name, #html)] from the named colors combobox"
@@ -206,15 +207,18 @@ class colorPicker(QDialog):
         "add a list [('name', '#html'), ] of named colors (repeats removed)"
         col = self.getNamedColors() + lst
         lst = [(i[0], QColor(i[1])) for i in col]
-        sen = set(); add = sen.add  # http://stackoverflow.com/a/480227
+        sen = set()
+        add = sen.add  # http://stackoverflow.com/a/480227
         uni = [x for x in lst if not (x[1].name() in sen or add(x[1].name()))]
 
         self.colorNamesCB.clear()
         for i, j in sorted(uni, key=lambda q: q[1].getHsv()):
-            icon = QPixmap(16, 16); icon.fill(j)
+            icon = QPixmap(16, 16)
+            icon.fill(j)
             self.colorNamesCB.addItem(QIcon(icon), i, j.name())
         self.colorWheel.setNamedColors([(i, j.name()) for i, j in uni])
-        self.cNameLabel.setToolTip('Named colors\n{:,} colors'.format(len(uni)))
+        self.cNameLabel.setToolTip(
+            'Named colors\n{:,} colors'.format(len(uni)))
 
     def setup(self):
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -233,9 +237,12 @@ class colorPicker(QDialog):
         self.bluInput = QSpinBox()
         self.rgbInputs = [self.redInput, self.grnInput, self.bluInput]
 
-        self.redLabel = QLabel('&R:'); self.redLabel.setToolTip('Red')
-        self.grnLabel = QLabel('&G:'); self.grnLabel.setToolTip('Green')
-        self.bluLabel = QLabel('&B:'); self.bluLabel.setToolTip('Blue')
+        self.redLabel = QLabel('&R:')
+        self.redLabel.setToolTip('Red')
+        self.grnLabel = QLabel('&G:')
+        self.grnLabel.setToolTip('Green')
+        self.bluLabel = QLabel('&B:')
+        self.bluLabel.setToolTip('Blue')
         self.rgbLabels = [self.redLabel, self.grnLabel, self.bluLabel]
 
         self.redLabel.setBuddy(self.redInput)
@@ -249,9 +256,12 @@ class colorPicker(QDialog):
         self.hsvInputs = [self.hueInput, self.satInput, self.valInput]
         self.hueInput.setWrapping(True)
 
-        self.hueLabel = QLabel('&H:'); self.hueLabel.setToolTip('Hue')
-        self.satLabel = QLabel('&S:'); self.satLabel.setToolTip('Saturation')
-        self.valLabel = QLabel('&V:'); self.valLabel.setToolTip('Value')
+        self.hueLabel = QLabel('&H:')
+        self.hueLabel.setToolTip('Hue')
+        self.satLabel = QLabel('&S:')
+        self.satLabel.setToolTip('Saturation')
+        self.valLabel = QLabel('&V:')
+        self.valLabel.setToolTip('Value')
         self.hsvLabels = [self.hueLabel, self.satLabel, self.valLabel]
 
         self.hueLabel.setBuddy(self.hueInput)
@@ -265,10 +275,14 @@ class colorPicker(QDialog):
         self.kInput = QSpinBox()
         self.cmykInputs = [self.cInput, self.mInput, self.yInput, self.kInput]
 
-        self.cLabel = QLabel('&C:'); self.cLabel.setToolTip('Cyan')
-        self.mLabel = QLabel('&M:'); self.mLabel.setToolTip('Magenta')
-        self.yLabel = QLabel('&Y:'); self.yLabel.setToolTip('Yellow')
-        self.kLabel = QLabel('&K:'); self.kLabel.setToolTip('Black')
+        self.cLabel = QLabel('&C:')
+        self.cLabel.setToolTip('Cyan')
+        self.mLabel = QLabel('&M:')
+        self.mLabel.setToolTip('Magenta')
+        self.yLabel = QLabel('&Y:')
+        self.yLabel.setToolTip('Yellow')
+        self.kLabel = QLabel('&K:')
+        self.kLabel.setToolTip('Black')
         self.cmykLabels = [self.cLabel, self.mLabel, self.yLabel, self.kLabel]
 
         self.cLabel.setBuddy(self.cInput)
@@ -278,7 +292,7 @@ class colorPicker(QDialog):
 
         for i in self.rgbInputs + self.hsvInputs + self.cmykInputs:
             i.setRange(0, 255)
-            i.setFixedSize(35, 22)
+            i.setFixedSize(44, 22)
             i.setAlignment(Qt.AlignCenter)
             i.setButtonSymbols(QAbstractSpinBox.NoButtons)
         self.hueInput.setRange(0, 359)
@@ -301,10 +315,10 @@ class colorPicker(QDialog):
         for i in self.inputLabels:
             i.setFixedSize(22, 22)
             i.setAlignment(rightCenter)
-            #i.setFrameShape(QFrame.Box)
 
         self.inputs = self.rgbInputs + self.hsvInputs + self.cmykInputs
-        for i in self.inputs: i.valueChanged.connect(self._colorEdited)
+        for i in self.inputs:
+            i.valueChanged.connect(self._colorEdited)
         self.htmlInput.editingFinished.connect(self._colorEdited)
 
         # picker button
@@ -327,25 +341,16 @@ class colorPicker(QDialog):
         self.showButton.setCheckable(True)
         self.showButton.clicked.connect(self.showColors)
 
-        self.rndButton = QPushButton('R&and')
-        self.rndButton.setToolTip('Select a random color')
-        self.rndButton.setFixedSize(35, 22)
-        self.rndButton.clicked.connect(self.randomColor)
-
-        # color wheel
         self.colorWheel = wheel()
-        self.colorWheel.setFixedSize(256, 256)#265, 265)
+        self.colorWheel.setFixedSize(256, 256)  # 265, 265)
         self.colorWheel.currentColorChanged.connect(self.setColor)
 
-        # named colors combo box
         self.colorNamesCB = QComboBox()
         self.colorNamesCB.setFixedSize(70 + 66 + 4 * h_spc, 22)  # spans 5 cols
-        #self.colorNamesCB.addItem('- Color Names -')
 
         self.cNameLabel = QLabel('&Named:')
         self.cNameLabel.setBuddy(self.colorNamesCB)
         self.cNameLabel.setAlignment(rightCenter)
-        #self.cNameLabel.setFrameShape(QFrame.Box)
         self.cNameLabel.setFixedSize(55, 22)
 
         lst = [i for i in QColor.colorNames() if str(i) != 'transparent']
@@ -363,56 +368,34 @@ class colorPicker(QDialog):
         self.dialogButtons.accepted.connect(self.closeValid)
         self.dialogButtons.rejected.connect(self.closeInvalid)
         self.dialogButtons.setCenterButtons(True)
-        # pass QColorDialog.NoButtons, False to setOption to remove
-
-        # assemble grid!
-        #    0  1   2  3   4  5   6
-        #
-        # color wheeeeeeeeeeeeellll   0
-        # disp r: rrr h: hhh c: ccc   1
-        # disp g: ggg s: sss m: mmm   2
-        # disp b: bbb v: vvv y: yyy   3
-        # disp ## -html- pic k: kkk   4
-        # name coooommmboooobox rnd   5
-
-        #.addWidget(widget, row, col, rspan, cspan)
         self.inputGrid.addWidget(self.colorWheel, 0, 0, 1, 7)
         self.inputGrid.addWidget(self.colorDisplay, 1, 0, 4, 1)
 
         for i, lab in enumerate(self.rgbLabels, 1):
-            self.inputGrid.addWidget(lab, i, 1, 1, 1)
-        self.inputGrid.addWidget(self.htmlLabel, 4, 1, 1, 1)
+            self.inputGrid.addWidget(lab, 1, i, 1, 1)
+            self.inputGrid.addWidget(self.htmlLabel, 3, 0, 1, 1)
 
         for i, wid in enumerate(self.rgbInputs, 1):
-            self.inputGrid.addWidget(wid, i, 2)
-        self.inputGrid.addWidget(self.htmlInput, 4, 2, 1, 2)
+            self.inputGrid.addWidget(wid, 2, i)
+            self.inputGrid.addWidget(self.htmlInput, 3, 1, 1, 2)
 
-        for i, lab in enumerate(self.hsvLabels, 1):
-            self.inputGrid.addWidget(lab, i, 3, 1, 1)
+        #for i, lab in enumerate(self.hsvLabels, 1):
+            #self.inputGrid.addWidget(lab, i, 3, 1, 1)
 
-        for i, wid in enumerate(self.hsvInputs, 1):
-            self.inputGrid.addWidget(wid, i, 4, 1, 1)
-        self.inputGrid.addWidget(self.pickButton, 4, 4, 1, 1)
+        #for i, wid in enumerate(self.hsvInputs, 1):
+        self.inputGrid.addWidget(wid, 3, 1, 1, 1)
+        self.inputGrid.addWidget(self.pickButton, 3, 3, 1, 1)
 
-        for i, lab in enumerate(self.cmykLabels, 1):
-            self.inputGrid.addWidget(lab, i, 5, 1, 1)
+        self.inputGrid.addWidget(self.colorNamesCB, 4, 1, 1, 5)
+        self.inputGrid.addWidget(self.cNameLabel, 4, 0, 1, 1)
+        #self.inputGrid.addWidget(self.showButton, 5, 6, 1, 1)
+        #self.inputGrid.addWidget(self.dialogButtons, 6, 0, 1, 7)
 
-        for i, wid in enumerate(self.cmykInputs, 1):
-            self.inputGrid.addWidget(wid, i, 6, 1, 1)
-
-        self.inputGrid.addWidget(self.colorNamesCB, 5, 1, 1, 5)
-        self.inputGrid.addWidget(self.cNameLabel, 5, 0, 1, 1)
-        self.inputGrid.addWidget(self.showButton, 5, 6, 1, 1)
-        self.inputGrid.addWidget(self.rndButton, 5, 6, 1, 1)
-        self.inputGrid.addWidget(self.dialogButtons, 6, 0, 1, 7)
-
-        self.setWindowTitle('Select color')
+        #self.setWindowTitle('Select color')
         ico = self.style().standardIcon(QStyle.SP_DialogResetButton)
         self.setWindowIcon(ico)
         self.setLayout(self.inputGrid)
         self.setFixedSize(self.sizeHint())
-        self.useRandom()#False)
-
 
 
 class wheel(QWidget):
@@ -435,7 +418,8 @@ class wheel(QWidget):
         self.chPt = self.pos
         self.hue = self.sat = self.value = 255
 
-        self.setup(); self.pos = self.cWhBox.center()
+        self.setup()
+        self.pos = self.cWhBox.center()
 
         self._namedColorList = []
         self._namedColorPts = []
@@ -445,40 +429,15 @@ class wheel(QWidget):
         self.installEventFilter(self)
 
         self._startedTimer = False
-
-##    def timerSpinner(self):
-##        "won't this be fun"
-##        self.o_ang -= 1; self.o_ang %= 360
-##        stable = False
-##        
-##        colWhl = QConicalGradient(self.cen, self.o_ang)
-##        whl_cols = [Qt.red, Qt.magenta,
-##                    Qt.blue, Qt.cyan, Qt.green,
-##                    Qt.yellow, Qt.red]
-##        for i, c in enumerate(whl_cols[::self.rot_d]):
-##            colWhl.setColorAt(i / 6.0, c)
-##        
-##        if stable:  # crosshairs stay on color
-##            t = radians(self.hue + self.o_ang * -self.rot_d) * -self.rot_d
-##            r = self.sat / 255.0 * self.cW_rad
-##            x, y = r * cos(t) + self.cen.x(), r * -sin(t) + self.cen.y()
-##            self.chPt = QPointF(x, y)
-##        else:  # crosshairs stay on point
-##            t = atan2(self.cen.y() - self.pos.y(), self.pos.x() - self.cen.x())
-##            h = (int(degrees(t)) - self.o_ang) * -self.rot_d
-##            self.hue = (h if h > 0 else h + 360) % 360
-##            col = QColor(); col.setHsv(self.hue, self.sat, self.value)
-##            self.currentColorChanged.emit(col)
-##
-##        self.cWhlBrush1 = QBrush(colWhl)
-##        self.update() 
+        plugin_widgets.append(wheel)
 
     def resizeEvent(self, event):
         self.setup()  # re-construct the sizes
         self.setNamedColors(self._namedColorList)
 
     def getColor(self):
-        col = QColor(); col.setHsv(self.hue, self.sat, self.value)
+        col = QColor()
+        col.setHsv(self.hue, self.sat, self.value)
         return col
 
     def setNamedColors(self, colorList):
@@ -494,9 +453,6 @@ class wheel(QWidget):
             x, y = r * cos(t) + self.cen.x(), r * -sin(t) + self.cen.y()
             lst.append(QPointF(x, y))
 
-            #t2 = ((v / 255.0) * self.ang_w + radians(self.e_ang) + 2 * pi) % (2 * pi)
-            #x, y = r2 * cos(t2) + self.cen.x(), r2 * -sin(t2) + self.cen.y()
-            #lst.append(QPointF(x, y))
         self._namedColorPts = lst
 
     def showNamedColors(self, flag=False):
@@ -532,18 +488,12 @@ class wheel(QWidget):
             if self.colWhlPath.contains(pos):  # in the color wheel
                 self.chPt = pos
 
-                #if not self._startedTimer:
-                #    self.timer = QTimer()
-                #    self.timer.timeout.connect(self.timerSpinner)
-                #    self.timer.start(30.303)
-                #    self._startedTimer = True
-
-                # hue -> mouse angle (same as t here)
                 h = (int(degrees(t)) - self.o_ang) * -self.rot_d
                 self.hue = (h if h > 0 else h + 360) % 360
 
                 # saturation -> mouse radius (clipped to wheel radius)
-                m_rad = sqrt((self.pos.x() - self.cen.x()) ** 2 + (self.pos.y() - self.cen.y()) ** 2)
+                m_rad = sqrt((self.pos.x() - self.cen.x()) **
+                             2 + (self.pos.y() - self.cen.y()) ** 2)
                 self.sat = int(255 * min(m_rad / self.cW_rad, 1))
 
             if self.vInArcPath.contains(pos):  # in the value selection arc
@@ -551,11 +501,14 @@ class wheel(QWidget):
                 r2 = self.vAoBox.width() / 2.0
 
                 x, y = r2 * cos(t) + self.cen.x(), r2 * -sin(t) + self.cen.y()
-                self.vIdCen = QPointF(x, y); self.vIdBox.moveCenter(self.vIdCen)
-                self.value = int(255 * (t - radians(self.e_ang)) / self.ang_w) % 256
+                self.vIdCen = QPointF(x, y)
+                self.vIdBox.moveCenter(self.vIdCen)
+                self.value = int(
+                    255 * (t - radians(self.e_ang)) / self.ang_w) % 256
 
             self.update()
-            col = QColor(); col.setHsv(self.hue, self.sat, self.value)
+            col = QColor()
+            col.setHsv(self.hue, self.sat, self.value)
             self.currentColorChanged.emit(col)
         return QWidget.eventFilter(self, source, event)
 
@@ -563,18 +516,14 @@ class wheel(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(painter.Antialiasing)
 
-        #painter.setBrush(QBrush(Qt.black, Qt.NoBrush))
-        #painter.drawRect(self.winBox)  # border
-
-        # value selector indicator
         painter.setBrush(QBrush(Qt.black, Qt.SolidPattern))
         painter.drawPie(self.vIdBox, 16 * (degrees(self.vIdAng) - 22.5), 720)
 
-        # value selector arc
         painter.setClipPath(self.vArcPath)
         painter.setPen(Qt.NoPen)
         arc = QConicalGradient(self.cen, self.e_ang)
-        color = QColor(); color.setHsv(self.hue, self.sat, 255)
+        color = QColor()
+        color.setHsv(self.hue, self.sat, 255)
         arc.setColorAt(1 - (self.e_ang - self.s_ang) / 360.0, color)
         arc.setColorAt(1, Qt.black)
         arc.setColorAt(0, Qt.black)
@@ -603,18 +552,20 @@ class wheel(QWidget):
         if self._showNames:
             painter.setClipPath(self.vArcPath, Qt.NoClip)
             painter.setPen(Qt.SolidLine)
-            try: painter.drawPoints(*self._namedColorPts)    # PyQt
-            except: painter.drawPoints(self._namedColorPts)  # PySide
+            try:
+                painter.drawPoints(*self._namedColorPts)    # PyQt
+            except:
+                painter.drawPoints(self._namedColorPts)  # PySide
 
     def setup(self):
         "sets bounds on value arc and color wheel"
         # bounding boxes
         self.winBox = QRectF(self.rect())
-        self.vIoBox = QRectF() # value indicator arc outer
-        self.vIdBox = QRectF() # value indicator box
-        self.vAoBox = QRectF() # value arc outer
-        self.vAiBox = QRectF() # value arc inner
-        self.cWhBox = QRectF() # color wheel
+        self.vIoBox = QRectF()  # value indicator arc outer
+        self.vIdBox = QRectF()  # value indicator box
+        self.vAoBox = QRectF()  # value arc outer
+        self.vAiBox = QRectF()  # value arc inner
+        self.cWhBox = QRectF()  # color wheel
 
         self.vIdBox.setSize(QSizeF(15, 15))
         self.vIoBox.setSize(self.winBox.size())
@@ -654,7 +605,8 @@ class wheel(QWidget):
         # painter paths (arcs, wheel)
         rad = self.vAoBox.width() / 2.0
         x, y = rad * cos(radians(self.s_ang)), -rad * sin(radians(self.s_ang))
-        x += self.cen.x(); y += self.cen.y()
+        x += self.cen.x()
+        y += self.cen.y()
 
         self.vArcPath = QPainterPath(QPointF(x, y))  # value arc (for color)
         self.vArcPath.arcTo(self.vAoBox, self.s_ang, self.e_ang - self.s_ang)
@@ -665,11 +617,9 @@ class wheel(QWidget):
         self.vInArcPath.arcTo(self.vIoBox, self.s_ang, self.e_ang - self.s_ang)
         self.vInArcPath.arcTo(self.vAiBox, self.e_ang, self.s_ang - self.e_ang)
         self.vInArcPath.closeSubpath()
-        
 
         self.colWhlPath = QPainterPath()
         self.colWhlPath.addEllipse(self.cWhBox)
-
 
 
 class magnifier(QGraphicsPixmapItem):
@@ -682,65 +632,74 @@ class magnifier(QGraphicsPixmapItem):
         super(magnifier, self).__init__(parent)
 
         self.setFlags(QGraphicsItem.ItemIsMovable)
-        self.setAcceptHoverEvents(True)#setAcceptsHoverEvents(True)
-        
+        self.setAcceptHoverEvents(True)  # setAcceptsHoverEvents(True)
+
         self.zoom = self.width = self.height = 10
         self.size = QSize(self.width, self.height)
 
         # +zw, zh so the mouse isn't sitting on the grid itself
         zw = 0 if self.width % 2 else self.zoom
         zh = 0 if self.height % 2 else self.zoom
-        self.offset = QPoint((self.width  * self.zoom + zw) // 2,
+        self.offset = QPoint((self.width * self.zoom + zw) // 2,
                              (self.height * self.zoom + zh) // 2)
-        
+
         self.background = None
         self.setPos(QCursor().pos() - self.offset)
-
 
     def drawGrid(self, image):
         "draws a grid on image"
         img = QPixmap(image.width() + 1, image.height() + 1)
-        p = QPainter(img); p.drawPixmap(1, 1, image)
+        p = QPainter(img)
+        p.drawPixmap(1, 1, image)
         # the +1 is for the grid around the image; otherwise grid is cut off
-        
+
         w, h, z = img.width(), img.height(), self.zoom
         for i in range(max(self.width, self.height) + 1):
-            p.drawLine(QPoint(0, i * z), QPoint(w, i * z)) # horiztonal lines
-            p.drawLine(QPoint(i * z, 0), QPoint(i * z, h)) # vertical lines
-                       
+            p.drawLine(QPoint(0, i * z), QPoint(w, i * z))  # horiztonal lines
+            p.drawLine(QPoint(i * z, 0), QPoint(i * z, h))  # vertical lines
+
         return img
 
     def setBackground(self, img):
-        self.background = img; self._readjust()
+        self.background = img
+        self._readjust()
 
     def setSize(self, w, h):
-        self.width = w; self.height = h; self._readjust()
+        self.width = w
+        self.height = h
+        self._readjust()
 
     def setZoom(self, z):
-        self.zoom = z; self._readjust()
+        self.zoom = z
+        self._readjust()
 
     def _readjust(self):
         "re-set some things"
         w, h, z = self.width, self.height, self.zoom
-        zw = 0 if w % 2 else z; zh = 0 if h % 2 else z
-        
+        zw = 0 if w % 2 else z
+        zh = 0 if h % 2 else z
+
         self.size = QSize(w, h)
         self.offset = QPoint((w * z + zw) // 2, (h * z + zh) // 2)
 
         pos = QCursor().pos() - self.offset
-        self.setPos(pos); self._setView(pos)
-    
+        self.setPos(pos)
+        self._setView(pos)
+
     def _setView(self, pos):
         "grab viewpoint around pos, set as image"
-        if self.background is None: return
+        if self.background is None:
+            return
 
         topLeft = pos - QPoint(self.width // 2, self.height // 2)
-        try: topLeft = topLeft.toPoint()
-        except: pass  # ugh
-        
+        try:
+            topLeft = topLeft.toPoint()
+        except:
+            pass  # ugh
+
         rect = QRect(topLeft, self.size)
         img = self.background.copy(rect)  # crop small section
-        
+
         w, h, z = img.width(), img.height(), self.zoom  # scale small section
         img = img.scaled(w * z, h * z, Qt.KeepAspectRatio)
         self.setPixmap(self.drawGrid(img))
@@ -750,10 +709,23 @@ class magnifier(QGraphicsPixmapItem):
         self.setPos(pos - self.offset)
         self._setView(pos)
 
-if __name__ == '__main__':
 
-    import sys
-    app = QApplication(sys.argv)
-    win = colorPicker()
-    win.show()
-    sys.exit(app.exec_())
+def start_plugin():
+    """This method is called when the plugin is started."""
+    widget = colorPicker()
+    widget.setWindowTitle("Color Wheel")
+    substance_painter.ui.add_dock_widget(widget)
+    plugin_widgets.append(widget)
+
+
+def close_plugin():
+    """This method is called when the plugin is stopped."""
+    # We need to remove all added widgets from the UI.
+    for widget in plugin_widgets:
+        substance_painter.ui.delete_ui_element(widget)
+    plugin_widgets.clear()
+    self.close()
+
+
+if __name__ == '__main__':
+    start_plugin()
