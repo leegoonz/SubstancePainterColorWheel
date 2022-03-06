@@ -1,27 +1,3 @@
-# MIT License
-#
-# Copyright (c) 2018 - 2021 Electrostatus
-# https://orthallelous.wordpress.com/2018/12/19/custom-color-dialog/
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
-
 from PySide2.QtCore import (QBuffer, QEvent, QIODevice, QRegExp, Qt,  # QTimer,
                             QPoint, QPointF, QRectF, QSize, QSizeF, QRect,
                             Signal)  # PySide2
@@ -34,7 +10,7 @@ from PySide2.QtWidgets import (QAbstractSpinBox, QApplication, QColorDialog,
 from PySide2.QtGui import (QBrush, QColor, QConicalGradient, QIcon,
                            QImage, QPainter, QPainterPath, QPixmap,
                            QRadialGradient, QRegExpValidator, QCursor,
-                           QScreen)
+                           QScreen, QClipboard)
 from math import degrees, radians, sqrt, atan2, sin, cos, pi
 import random
 import substance_painter.ui
@@ -50,6 +26,7 @@ class colorPicker(QDialog):
 
     def __init__(self, initial=None, parent=None):
         super(colorPicker, self).__init__(parent)
+        self.__cb = QClipboard()
         self.setup()
         self.setColor(initial)
 
@@ -127,6 +104,8 @@ class colorPicker(QDialog):
             j.setValue(i)
         for i, j in zip(color.getCmyk()[:-1], self.cmykInputs):
             j.setValue(i)
+        colorText = color.name()[1:]
+        self.__cb.setText(colorText, QClipboard.Clipboard)
         self.htmlInput.setText(color.name()[1:])
         self.colorWheel.setColor(color)
         idx = self.colorNamesCB.findData(color.name())
